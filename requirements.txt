@@ -6,4 +6,3 @@ requests
 wikipedia
 youtube_dl
 requests
-json
