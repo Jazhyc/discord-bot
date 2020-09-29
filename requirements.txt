@@ -8,3 +8,4 @@ youtube_dl
 requests
 colorlog
 discord.py[voice] ~= 1.4.0
+wolframalpha
