@@ -15,8 +15,8 @@ import csv, time
 from youtube_dl import YoutubeDL
 import wolframalpha
 
-weatherKey = "65ee9edb7a7e7a3186aea38f8429dc84"
-discordKey = "NzQ0MjY3MDI4NDI0Mjk0NTAx.Xzgurw.IS8uNiGjJWke6LAb1QO_CzdCDIo"
+weatherKey = "Enter Here"
+discordKey = "Enter Here"
 weatherUrl = "http://api.openweathermap.org/data/2.5/weather?"
 random.seed(time.perf_counter())
 WIKI_REQUEST = 'http://en.wikipedia.org/w/api.php?action=query&prop=pageimages&format=json&piprop=original&titles='
