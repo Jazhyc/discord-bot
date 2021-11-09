@@ -1,9 +1,30 @@
 """This file contains all the functions necessary for the main executable to work"""
 
+from os import path
+import time, random
+from youtube_dl import YoutubeDL
+import discord
+import requests, json
+import wikipedia
+import urllib.request, re
+import dog_api as dog
+import pickle
+
 # Normal helper functions
 
-def getSummary(content, wikipedia):
+def loadscore():
+    """This function creates a leaderboard dictionary if it does not exist or loads it otherwise"""
+    if not path.exists("leaderboard.pkl"): 
+        leaderboard = {}
+        pickle.dump(leaderboard, open("leaderboard.pkl", 'wb'))
+    else:
+        leaderboard = pickle.load(open('leaderboard.pkl', 'rb'))
+    
+    return leaderboard
+
+def getSummary(content):
     """A bit Overkill for a single Function"""
+    success = False
     if content == 'Trump':
         message = wikipedia.summary('Circus Clown', sentences=1)
     else:
@@ -12,10 +33,10 @@ def getSummary(content, wikipedia):
             success = True
         except:
             message = 'Query was too Ambiguous, or the Details you are looking for does not exist.'
-            success = False
+            
     return message, success
 
-def getVideo(link, re, urllib, YoutubeDL):
+def getVideo(link):
     """Gets Video Player Object and Title from Youtube, URL is the url for the audio"""
     YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
     link = '-'.join(link.split())
@@ -35,7 +56,7 @@ def load_jokes(file):
     joke_file = open(file)
     return joke_file.read().split('\n')
 
-def getWeather(city, channel, weatherUrl, weatherKey, requests):
+def getWeather(city, channel, weatherUrl, weatherKey):
     """Gets Weather Parameters from OpenWeather's API"""
     complete_url = weatherUrl + "appid=" + weatherKey + "&q=" + city
     response = requests.get(complete_url)
@@ -108,12 +129,12 @@ async def queryWolfram(message, wolfclient):
             await message.channel.send("Wolfram cannot find the Answer to that Question")
             await message.channel.send(e)
 
-async def queryWikipedia(message, discord, wikipedia):
+async def queryWikipedia(message):
     """Sends a query to Wikipedia and gets details regarding the query if possible"""
     if message.content.lower().startswith('$wiki'):
         wikibed = discord.Embed(color=0x0000ff)
         content = message.content.split(' ', 1)[1]
-        summary, success = getSummary(content, wikipedia)
+        summary, success = getSummary(content)
 
         if success:
             wikipage = wikipedia.page(title=content, preload=False)
@@ -124,12 +145,12 @@ async def queryWikipedia(message, discord, wikipedia):
         else:
             await message.channel.send('Your Query was too Ambiguous, or the Details don\'t Exist')
 
-async def sendWeather(message, weatherUrl, weatherKey, requests):
+async def sendWeather(message, weatherUrl, weatherKey):
     """Gets the weather at the specified place using the open weather API"""
     if message.content.lower().startswith('$weather'):
         channel = message.channel
         city = message.content.split(' ', 1)[1]
-        text = getWeather(city, channel, weatherUrl, weatherKey, requests)
+        text = getWeather(city, channel, weatherUrl, weatherKey)
         await message.channel.send(text)
 
 async def banUser(message):
@@ -142,7 +163,7 @@ async def banUser(message):
         await asyncio.sleep(1)
         await message.channel.send('JK I Can\'t do that\nUnless.....')
 
-async def getHelp(message, discord):
+async def getHelp(message):
     """Produces a list of all the available commands of a bot"""
 
     options = [
@@ -159,7 +180,9 @@ async def getHelp(message, discord):
     'Rdog (Breed)?',
     'Dogbreeds',
     'Quiz',
-    'Wolfram [Query]'
+    'Wolfram [Query]',
+    'score',
+    'leaderboard'
     ]
 
     if message.content.lower().startswith('$help'):
@@ -189,7 +212,7 @@ async def greetUser(message):
     except:
         pass
 
-async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, discord):
+async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, leaderboard):
     """Determines if the answer received is correct"""
 
     if message.content.lower() in mystery.lower() and len(message.content) >= 4 and inQuiz:
@@ -201,6 +224,15 @@ async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, di
         quizzee = ''
         warning = False
         quiztime = 0
+
+        # Increments score or creates it accordingly
+        if message.author.name in leaderboard:
+            leaderboard[message.author.name] += 1
+        else:
+            leaderboard[message.author.name] = 1
+        
+        pickle.dump(leaderboard, open("leaderboard.pkl", 'wb'))
+        await message.channel.send(f"Your score is now: {leaderboard[message.author.name]}")
 
     return inQuiz, quizzee, warning, quiztime
 
@@ -223,7 +255,7 @@ async def stopQuiz(message, inQuiz, warning, quiztime, quizmessage, mystery):
 
     return inQuiz, warning, quiztime
 
-async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, quiztime, discord, quizmessage, mystery):
+async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, quiztime, quizmessage, mystery):
     """Plays the specified video while also changing the quiz variables as needed"""
 
     FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
@@ -238,7 +270,7 @@ async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, qu
             await quizmessage.channel.send(f'Too bad, the anime was {mystery}')
 
         try:
-            URL, title, video_link = getVideo(message.content.split(' ', 1)[1], re, urllib, YoutubeDL)
+            URL, title, video_link = getVideo(message.content.split(' ', 1)[1])
             voice_player = message.guild.voice_client
             if voice_player is None:
                 voice_player = await message.author.voice.channel.connect()
@@ -257,10 +289,12 @@ async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, qu
     
     return inQuiz, warning, quizzee, quiztime
 
-async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist, re, urllib, YoutubeDL, random, discord):
+async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist):
     """Selects a random song to play from the anime list"""
 
     FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+
+    start = time.perf_counter()
 
     if message.content.lower().startswith('$quiz'):
 
@@ -268,15 +302,13 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
             # Threading can lead to some problems in sharing memory
             if inQuiz:
                 await quizmessage.channel.send(f"Too bad, the anime was {mystery}")
-                inQuiz = False
                 warning = False
-                quiztime = 0
 
             quizmessage = message
             quizzee = message.author
             await message.channel.send(f'Starting Quiz with {quizzee}')
-            mystery = animelist[random.randint(0, 250)][1]
-            URL, title, video_link = getVideo(mystery + ' Anime Opening', re, urllib, YoutubeDL)
+            mystery = animelist[random.randint(0, 150)][1]
+            URL, title, video_link = getVideo(mystery + ' Anime Opening')
             voice_player = message.guild.voice_client
 
             if voice_player is None:
@@ -300,4 +332,32 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
             await message.channel.send('Something Went Wrong')
             await message.channel.send(e)
     
-    return inQuiz, quizzee, warning, quiztime, mystery, quizmessage
+    return inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start
+
+async def getScore(message, leaderboard):
+    """Gets the score of the user un the quiz game. If the user never played it, create a new entry"""
+
+    if message.content.lower().startswith("$score"):
+
+        if message.author.name not in leaderboard:
+            leaderboard[message.author.name] = 0
+        
+        await message.channel.send(f"Your total quiz score is: {leaderboard[message.author.name]}")
+
+async def getLeaderboard(message, leaderboard):
+    """Prints the players who are at the top of the leaderboard"""
+
+    if message.content.lower().startswith("$leaderboard"):
+
+        size = min(len(leaderboard), 10)
+        
+        players = sorted(leaderboard, key=leaderboard.get, reverse=True)[:size]
+
+        content = '\n'.join([f"Position {i + 1} - {players[i]:^20} - Score: {leaderboard[players[i]]:^20}" for i in range(size)])
+
+        leaderBed = discord.Embed(color=0x0000ff)
+        leaderBed.title = "Current Leaderboard"
+        leaderBed.description = content
+        leaderBed.set_thumbnail(url='https://t3.ftcdn.net/jpg/02/84/67/02/360_F_284670286_VB4EEnS01sbqlueiFka9BO3S5bEFhnx2.jpg')
+
+        await message.channel.send(embed=leaderBed)
