@@ -1,6 +1,6 @@
 <h1> Python Discord Bot </h1> 
 
-A Simple Chatbot in Python that uses the discord API which is capable of
+A Simple Chatbot in Python that uses the discord and several other APIs which is capable of
 telling the Weather, Searching up things on Wikipedia, streaming Audio
 from Youtube, and a bit more.
 
