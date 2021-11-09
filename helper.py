@@ -1,3 +1,5 @@
+"""This file contains all the functions necessary for the main executable to work"""
+
 # Normal helper functions
 
 def getSummary(content, wikipedia):
@@ -268,6 +270,8 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
                 await quizmessage.channel.send(f"Too bad, the anime was {mystery}")
                 inQuiz = False
                 warning = False
+                quiztime = 0
+
             quizmessage = message
             quizzee = message.author
             await message.channel.send(f'Starting Quiz with {quizzee}')
