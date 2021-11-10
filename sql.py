@@ -38,7 +38,7 @@ def incrementScore(cursor, user, score):
 def getSQLLeaderboard(cursor):
     """Gets the top 10 players globally"""
 
-    command = "Select * from leaderboard order by score LIMIT 10"
+    command = "Select * from leaderboard order by score DESC LIMIT 10"
     cursor.execute(command)
 
     return cursor.fetchall()

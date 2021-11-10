@@ -355,7 +355,7 @@ async def getLeaderboard(message, cursor):
         content = '\n'.join([f"Position {i + 1} - {leaderboard[i][0]:^20} - Score: {leaderboard[i][1]:^20}" for i in range(size)])
 
         leaderBed = discord.Embed(color=0x0000ff)
-        leaderBed.title = "Current Leaderboard"
+        leaderBed.title = "Current Global Leaderboard"
         leaderBed.description = content
         leaderBed.set_thumbnail(url='https://t3.ftcdn.net/jpg/02/84/67/02/360_F_284670286_VB4EEnS01sbqlueiFka9BO3S5bEFhnx2.jpg')
 
