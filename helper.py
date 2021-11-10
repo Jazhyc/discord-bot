@@ -219,13 +219,14 @@ async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, cu
         quiztime = 0
 
         user = message.author.name
-        score = getSQLScore(cursor, user)
 
         # Increments score or creates it accordingly
         if checkExists(cursor, user):
+            score = getSQLScore(cursor, user)
             incrementScore(cursor, user, score)
         else:
             createScore(cursor, user, 1)
+            score = 0
         
         await message.channel.send(f"{user}'s score is now: {score + 1}")
 
@@ -352,7 +353,7 @@ async def getLeaderboard(message, cursor):
 
         size = min(len(leaderboard), 10)
 
-        content = '\n'.join([f"Position {i + 1} - {leaderboard[i][0]:^20} - Score: {leaderboard[i][1]:^20}" for i in range(size)])
+        content = '\n'.join([f"{i + 1} - {leaderboard[i][0]:^20} - Score: {leaderboard[i][1]:^20}" for i in range(size)])
 
         leaderBed = discord.Embed(color=0x0000ff)
         leaderBed.title = "Current Global Leaderboard"
