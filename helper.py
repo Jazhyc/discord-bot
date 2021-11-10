@@ -8,19 +8,12 @@ import requests, json
 import wikipedia
 import urllib.request, re
 import dog_api as dog
-import pickle
+import psycopg2
+
+# Helper SQL functions
+from sql import *
 
 # Normal helper functions
-
-def loadscore():
-    """This function creates a leaderboard dictionary if it does not exist or loads it otherwise"""
-    if not path.exists("leaderboard.pkl"): 
-        leaderboard = {}
-        pickle.dump(leaderboard, open("leaderboard.pkl", 'wb'))
-    else:
-        leaderboard = pickle.load(open('leaderboard.pkl', 'rb'))
-    
-    return leaderboard
 
 def getSummary(content):
     """A bit Overkill for a single Function"""
@@ -212,7 +205,7 @@ async def greetUser(message):
     except:
         pass
 
-async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, leaderboard):
+async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, cursor):
     """Determines if the answer received is correct"""
 
     if message.content.lower() in mystery.lower() and len(message.content) >= 4 and inQuiz:
@@ -225,14 +218,16 @@ async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, le
         warning = False
         quiztime = 0
 
+        user = message.author.name
+        score = getSQLScore(cursor, user)
+
         # Increments score or creates it accordingly
-        if message.author.name in leaderboard:
-            leaderboard[message.author.name] += 1
+        if checkExists(cursor, user):
+            incrementScore(cursor, user, score)
         else:
-            leaderboard[message.author.name] = 1
+            createScore(cursor, user, 1)
         
-        pickle.dump(leaderboard, open("leaderboard.pkl", 'wb'))
-        await message.channel.send(f"Your score is now: {leaderboard[message.author.name]}")
+        await message.channel.send(f"{user}'s score is now: {score + 1}")
 
     return inQuiz, quizzee, warning, quiztime
 
@@ -333,26 +328,31 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
     
     return inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start
 
-async def getScore(message, leaderboard):
+async def getScore(message, cursor):
     """Gets the score of the user un the quiz game. If the user never played it, create a new entry"""
 
     if message.content.lower().startswith("$score"):
 
-        if message.author.name not in leaderboard:
-            leaderboard[message.author.name] = 0
-        
-        await message.channel.send(f"Your total quiz score is: {leaderboard[message.author.name]}")
+        user = message.author.name
 
-async def getLeaderboard(message, leaderboard):
+        if (checkExists(cursor, user)):
+            score = getSQLScore(cursor, user)
+            await message.channel.send(f"{user}'s score: {score}")
+
+        else:
+            createScore(cursor, user, 0)
+            await message.channel.send(f"{user}'s score: 0")
+
+async def getLeaderboard(message, cursor):
     """Prints the players who are at the top of the leaderboard"""
 
     if message.content.lower().startswith("$leaderboard"):
 
-        size = min(len(leaderboard), 10)
-        
-        players = sorted(leaderboard, key=leaderboard.get, reverse=True)[:size]
+        leaderboard = getSQLLeaderboard(cursor)
 
-        content = '\n'.join([f"Position {i + 1} - {players[i]:^20} - Score: {leaderboard[players[i]]:^20}" for i in range(size)])
+        size = min(len(leaderboard), 10)
+
+        content = '\n'.join([f"Position {i + 1} - {leaderboard[i][0]:^20} - Score: {leaderboard[i][1]:^20}" for i in range(size)])
 
         leaderBed = discord.Embed(color=0x0000ff)
         leaderBed.title = "Current Leaderboard"
