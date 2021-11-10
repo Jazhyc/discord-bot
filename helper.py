@@ -13,6 +13,10 @@ import psycopg2
 # Helper SQL functions
 from sql import *
 
+# Constant configurations
+FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
+YDL_OPTIONS = {'noplaylist':'True'}
+
 # Normal helper functions
 
 def getSummary(content):
@@ -31,7 +35,6 @@ def getSummary(content):
 
 def getVideo(link):
     """Gets Video Player Object and Title from Youtube, URL is the url for the audio"""
-    YDL_OPTIONS = {'format': 'bestaudio', 'noplaylist':'True'}
     link = '-'.join(link.split())
     search_keyword = re.sub("['\"]",'', link)
     html = urllib.request.urlopen("https://www.youtube.com/results?search_query=" + search_keyword)
@@ -254,8 +257,6 @@ async def stopQuiz(message, inQuiz, warning, quiztime, quizmessage, mystery):
 async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, quiztime, quizmessage, mystery):
     """Plays the specified video while also changing the quiz variables as needed"""
 
-    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-
     if message.content.startswith('$play'):
 
         if inQuiz:
@@ -285,12 +286,8 @@ async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, qu
     
     return inQuiz, warning, quizzee, quiztime
 
-async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist):
+async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist, start):
     """Selects a random song to play from the anime list"""
-
-    FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
-
-    start = time.perf_counter()
 
     if message.content.lower().startswith('$quiz'):
 
@@ -299,11 +296,12 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
             if inQuiz:
                 await quizmessage.channel.send(f"Too bad, the anime was {mystery}")
                 warning = False
+                start = time.perf_counter()
 
             quizmessage = message
             quizzee = message.author
             await message.channel.send(f'Starting Quiz with {quizzee}')
-            mystery = animelist[random.randint(0, 150)][1]
+            mystery = animelist[random.randint(0, 250)][1]
             URL, title, video_link = getVideo(mystery + ' Anime Opening')
             voice_player = message.guild.voice_client
 
