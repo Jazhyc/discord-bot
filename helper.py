@@ -330,7 +330,6 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
         
         except Exception as e:
             await message.channel.send('Something Went Wrong')
-            await message.channel.send(e)
     
     return inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start
 
