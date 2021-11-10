@@ -4,7 +4,6 @@
 
 ![Last Commit](https://img.shields.io/github/last-commit/JazHyc/discord-bot?style=plastic)
 ![Total Commits](https://img.shields.io/github/commit-activity/m/JazHyc/discord-bot?style=plastic)
-![License](https://img.shields.io/github/license/JazHyc/discord-bot?style=plastic)
 
 ## Details
 
