@@ -141,6 +141,7 @@ def main():
         await getLeaderboard(message, cur)
 
         # Commits whatever change the cursors may have made
+        # This might not scale as the bot gets introduced to more servers
         connection.commit()
         
     # Token, must be a secret
