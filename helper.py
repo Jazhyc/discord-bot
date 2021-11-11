@@ -74,8 +74,14 @@ def getWeather(city, channel, weatherUrl, weatherKey):
 async def joinVC(message):
     """Joins the voice chanel of the guild in which the message was sent"""
     if message.content.lower().startswith('$join'):
-        voice_player = await message.author.voice.channel.connect()
-        await message.channel.send('Joined Voice Channel')
+        voice_player = message.guild.voice_client
+
+        if voice_player is None:
+            voice_player = await message.author.voice.channel.connect()
+            await message.channel.send('Joined Voice Channel')
+        else:
+            await message.channel.send("I'm already in a channel")
+        
 
 async def leaveVC(message):
     """Leaves the voice channel of the guild in which the message was sent"""
