@@ -89,8 +89,9 @@ def main():
         # What possessed me to use these earlier?
         global inQuiz, quizzee, mystery, quiztime, warning, start, stop, quizmessage, quiz_voice
 
+        # Sanity check to stop the time counter
         if not inQuiz:
-            quiztime = 0
+            start = time.perf_counter()
 
         # Prevents bot from replying to itself
         if message.author == client.user:
@@ -107,10 +108,11 @@ def main():
 
         # Starts the quiz and selects a random song
         inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start = await startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist, start)
-    
-        await joinVC(message)
 
-        await leaveVC(message)
+        # Leaves the VC while also turning off the quiz
+        inQuiz = await leaveVC(message, inQuiz)
+
+        await joinVC(message)
 
         await greetUser(message)
         

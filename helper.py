@@ -17,6 +17,26 @@ from sql import *
 FFMPEG_OPTIONS = {'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', 'options': '-vn'}
 YDL_OPTIONS = {'noplaylist':'True'}
 
+# Various commands of the bot. Used in the getHelp function
+options = [
+    'Hello',
+    'How are you?',
+    'Joke',
+    'Time',
+    'Weather [City]',
+    'Ban (User)',
+    'Wikipedia [Webpage]',
+    'Join',
+    'Leave',
+    'Play [video]',
+    'Rdog (Breed)?',
+    'Dogbreeds',
+    'Quiz',
+    'Wolfram [Query]',
+    'score',
+    'leaderboard'
+]
+
 # Normal helper functions
 
 def getSummary(content):
@@ -83,13 +103,15 @@ async def joinVC(message):
             await message.channel.send("I'm already in a channel")
         
 
-async def leaveVC(message):
+async def leaveVC(message, inQuiz):
     """Leaves the voice channel of the guild in which the message was sent"""
     if message.content.lower().startswith('$leave'):
         voice_player = message.guild.voice_client
         await voice_player.disconnect()
         await message.channel.send('Left Voice Channel')
         inQuiz = False
+    
+    return inQuiz
 
 async def getTime(message):
     """Gets the time of region in which the bot is located"""
@@ -168,25 +190,6 @@ async def banUser(message):
 async def getHelp(message):
     """Produces a list of all the available commands of a bot"""
 
-    options = [
-    'Hello',
-    'How are you?',
-    'Joke',
-    'Time',
-    'Weather [City]',
-    'Ban (User)',
-    'Wikipedia [Webpage]',
-    'Join',
-    'Leave',
-    'Play [video]',
-    'Rdog (Breed)?',
-    'Dogbreeds',
-    'Quiz',
-    'Wolfram [Query]',
-    'score',
-    'leaderboard'
-    ]
-
     if message.content.lower().startswith('$help'):
         actions = '\n'.join(options)
         helpbed = discord.Embed(color=0x0000ff)
@@ -217,7 +220,10 @@ async def greetUser(message):
 async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, cursor):
     """Determines if the answer received is correct"""
 
-    if message.content.lower() in mystery.lower() and len(message.content) >= 4 and inQuiz:
+    # Incase the current anime has less than four characters
+    size = min(4, len(mystery))
+
+    if message.content.lower() in mystery.lower() and len(message.content) >= size and inQuiz:
         await message.channel.send(f"Congratulations, the Anime is {mystery}")
         voice_player = message.guild.voice_client
         voice_player.stop()
