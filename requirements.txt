@@ -10,3 +10,4 @@ colorlog
 discord.py[voice] ~= 1.4.0
 wolframalpha
 psycopg2
+jikanpy

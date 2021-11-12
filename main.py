@@ -7,6 +7,7 @@ import discord, asyncio
 import csv
 import wolframalpha
 import psycopg2
+from jikanpy import Jikan
 
 # Custom library that contains all the code required for the bot to work
 from helper import *
@@ -27,8 +28,10 @@ def main():
     client = discord.Client()
     wolfclient = wolframalpha.Client(WOLFRAM_KEY)
     puns = load_jokes('jokes.txt')
-    animes = open('anime.csv', encoding='utf-8')
-    animelist = list(csv.reader(animes))
+
+    # Generate anime selector object
+    jikan = Jikan()
+    animes = loadAnimes(jikan)
 
     # Creates connection to Postgres Database
     connection = psycopg2.connect(DATABASE_URL)
@@ -107,7 +110,7 @@ def main():
         inQuiz, quizzee, warning, quiztime = await correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, cur)
 
         # Starts the quiz and selects a random song
-        inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start = await startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist, start)
+        inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start = await startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animes, start)
 
         # Leaves the VC while also turning off the quiz
         inQuiz = await leaveVC(message, inQuiz)

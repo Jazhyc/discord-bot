@@ -33,8 +33,8 @@ options = [
     'Dogbreeds',
     'Quiz',
     'Wolfram [Query]',
-    'score',
-    'leaderboard'
+    'Score',
+    'Leaderboard'
 ]
 
 # Normal helper functions
@@ -42,14 +42,12 @@ options = [
 def getSummary(content):
     """A bit Overkill for a single Function"""
     success = False
-    if content == 'Trump':
-        message = wikipedia.summary('Circus Clown', sentences=1)
-    else:
-        try:
-            message = wikipedia.summary(content, sentences=3)
-            success = True
-        except:
-            message = 'Query was too Ambiguous, or the Details you are looking for does not exist.'
+
+    try:
+        message = wikipedia.summary(content, sentences=3)
+        success = True
+    except:
+        message = 'Query was too Ambiguous, or the Details you are looking for does not exist.'
             
     return message, success
 
@@ -88,6 +86,25 @@ def getWeather(city, channel, weatherUrl, weatherKey):
         return f"The Weather Parameters in {city}\nTemperature: {temp:.2f} C\nPressure: {pressure} Pa\nHumidity: {humidity}%\nDescription: {description}"
     else:
         return "Invalid City"
+
+def loadAnimes(jikan):
+    """Gets the top x animes from my anime list and returns a list that contains these"""
+    """This is a naive way of loading"""
+
+    animes = []
+
+    # 7 x 50 = 350
+    for i in range(7):
+
+        # This gets a single page of top anime
+        data = jikan.top(type='anime', page=i, subtype='tv')
+
+        # Adds every anime to the list
+        for j in range(50):
+            animes.append(data['top'][j]['title'])
+
+    
+    return animes
 
 # Asynchronous Helper Functions to execute various commands
 
@@ -223,7 +240,7 @@ async def correctAnswer(message, inQuiz, quizzee, warning, quiztime, mystery, cu
     # Incase the current anime has less than four characters
     size = min(4, len(mystery))
 
-    if message.content.lower() in mystery.lower() and len(message.content) >= size and inQuiz:
+    if message.content.lower() in mystery.lower() and len(message.content) >= size and inQuiz and message.content.lower() not in "season":
         await message.channel.send(f"Congratulations, the Anime is {mystery}")
         voice_player = message.guild.voice_client
         voice_player.stop()
@@ -298,7 +315,7 @@ async def playVideo(message, re, urllib, YoutubeDL, inQuiz, warning, quizzee, qu
     
     return inQuiz, warning, quizzee, quiztime
 
-async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animelist, start):
+async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizmessage, animes, start):
     """Selects a random song to play from the anime list"""
 
     if message.content.lower().startswith('$quiz'):
@@ -313,7 +330,10 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
             quizmessage = message
             quizzee = message.author
             await message.channel.send(f'Starting Quiz with {quizzee}')
-            mystery = animelist[random.randint(0, 250)][1]
+
+            # selects random anime
+            mystery = animes[random.randint(0, 350 - 1)]
+
             URL, title, video_link = getVideo(mystery + ' Anime Opening')
             voice_player = message.guild.voice_client
 
@@ -336,6 +356,7 @@ async def startQuiz(message, inQuiz, quizzee, warning, quiztime, mystery, quizme
         
         except Exception as e:
             await message.channel.send('Something Went Wrong')
+            await message.channel.send(e)
     
     return inQuiz, quizzee, warning, quiztime, mystery, quizmessage, start
 
